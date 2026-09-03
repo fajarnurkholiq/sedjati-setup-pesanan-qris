@@ -1,17 +1,19 @@
+```html
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sedjati Coffee - Sistem Pesanan</title>
-
-    <link rel="icon" href="assets/favicon/favicon.ico">
+    <title>Sedjati Coffee - Self Order</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- QRCode JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <!-- Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,419 +23,265 @@
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #FBF9F5;
-            color: #2D241E;
+            background-color: #1A3021;
+            color: #F4F1EA;
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 
-<body class="bg-[#FBF9F5] text-[#2D241E] min-h-screen flex flex-col selection:bg-[#D4A373] selection:text-white pb-32">
+<body class="bg-[#1A3021] text-[#F4F1EA] min-h-screen flex flex-col selection:bg-[#C2A667] selection:text-white pb-32">
 
-<!-- ========================================================= -->
-<!-- CUSTOMER VIEW -->
-<!-- ========================================================= -->
-
+<!-- =================CUSTOMER VIEW================= -->
 <div id="customer-view" class="w-full flex flex-col flex-1">
-
     <!-- Header -->
-    <header class="sticky top-0 z-30 bg-[#FBF9F5]/90 backdrop-blur-md border-b border-[#EADBC8] px-5 py-4">
+    <header class="sticky top-0 z-30 bg-[#1A3021]/95 backdrop-blur-md border-b border-[#2C4A35] px-5 py-4">
         <div class="max-w-md mx-auto flex justify-between items-center">
-
             <div>
-                <h1 class="text-xs tracking-widest uppercase text-[#8C6D53] font-semibold">
-                    Sedjati Coffee
-                </h1>
-                <p id="table-display" class="text-xl font-bold tracking-tight">
-                    Meja --
-                </p>
+                <h1 class="text-xs tracking-widest uppercase text-[#C2A667] font-semibold">Sedjati Coffee</h1>
+                <p id="table-display" class="text-xl font-bold tracking-tight text-[#F4F1EA]">Meja --</p>
             </div>
-
-            <div class="flex items-center gap-2">
-                <button onclick="openInfoModal()"
-                        class="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#8C6D53] border border-[#EADBC8] text-sm"
-                        title="Info Toko">
-                    ℹ️
-                </button>
-
-                <div id="brand-logo-wrap"
-                     class="w-10 h-10 rounded-full bg-[#EADBC8]/40 flex items-center justify-center text-[#5C4033] font-semibold text-sm border border-[#EADBC8] overflow-hidden">
-                    ☕
-                </div>
+            <div class="w-10 h-10 rounded-full bg-[#2C4A35] flex items-center justify-center text-[#C2A667] font-semibold text-sm border border-[#3A5D45]">
+                ☕
             </div>
-
         </div>
     </header>
 
-
-    <!-- Main -->
+    <!-- Main Content -->
     <main class="flex-1 max-w-md w-full mx-auto px-5 pt-4">
-
-        <!-- Table Error -->
-        <div id="table-error-banner"
-             class="hidden bg-[#8C3D2B]/10 border border-[#8C3D2B]/30 rounded-2xl p-4 mb-4 text-center">
-            <p class="text-sm font-semibold text-[#8C3D2B]">
-                Silakan scan QR meja untuk memesan.
-            </p>
+        <!-- Table Error Banner -->
+        <div id="table-error-banner" class="hidden bg-rose-900/20 border border-rose-800/40 rounded-2xl p-4 mb-4 text-center">
+            <p class="text-sm font-semibold text-rose-300">Silakan scan QR meja terlebih dahulu untuk memesan.</p>
         </div>
 
-
-        <!-- Category (rendered dynamically by JS, see renderCategoryTabs) -->
-        <nav class="sticky top-[73px] z-20 bg-[#FBF9F5] py-3 -mx-5 px-5 mb-4 border-b border-[#EADBC8]/50">
-            <div id="category-tabs" class="flex gap-2 overflow-x-auto no-scrollbar py-1"></div>
+        <!-- Categories -->
+        <nav class="sticky top-[73px] z-20 bg-[#1A3021] py-3 -mx-5 px-5 mb-4 border-b border-[#2C4A35]">
+            <div id="category-tabs" class="flex gap-2 overflow-x-auto no-scrollbar py-1">
+                <button onclick="filterCategory('Semua')" class="cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-[#C2A667] text-[#1A3021]" data-category="Semua">Semua</button>
+                <button onclick="filterCategory('Espresso')" class="cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45]" data-category="Espresso">Espresso</button>
+                <button onclick="filterCategory('Signature')" class="cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45]" data-category="Signature">Signature</button>
+                <button onclick="filterCategory('Manual Brew')" class="cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45]" data-category="Manual Brew">Manual Brew</button>
+                <button onclick="filterCategory('Matcha')" class="cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45]" data-category="Matcha">Matcha</button>
+                <button onclick="filterCategory('Non Coffee')" class="cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45]" data-category="Non Coffee">Non Coffee</button>
+                <button onclick="filterCategory('Bigger Size')" class="cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45]" data-category="Bigger Size">1 Liter</button>
+                <button onclick="filterCategory('Dessert')" class="cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45]" data-category="Dessert">Dessert</button>
+                <button onclick="filterCategory('Pastry')" class="cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45]" data-category="Pastry">Pastry</button>
+            </div>
         </nav>
 
-
-        <!-- Menu -->
+        <!-- Menu List -->
         <div id="menu-list" class="flex flex-col gap-4"></div>
-
-        <!-- Footer info kecil -->
-        <div class="text-center text-[11px] text-[#8C6D53] py-8">
-            Sedjati Coffee · Kedai Kopi · Majalengka
-        </div>
-
     </main>
 
-
     <!-- Floating Cart -->
-    <div id="floating-cart"
-         class="fixed bottom-6 left-5 right-5 max-w-md mx-auto z-40 transition-all duration-300 transform translate-y-32 opacity-0">
-        <button onclick="openCartModal()"
-                class="w-full bg-[#2D241E] text-white py-4 px-6 rounded-2xl shadow-xl flex justify-between items-center">
+    <div id="floating-cart" class="fixed bottom-6 left-5 right-5 max-w-md mx-auto z-40 transition-all duration-300 transform translate-y-32 opacity-0">
+        <button onclick="openCartModal()" class="w-full bg-[#C2A667] text-[#1A3021] py-4 px-6 rounded-2xl shadow-xl flex justify-between items-center font-bold">
             <div class="flex items-center gap-3">
-                <div id="cart-count-badge"
-                     class="bg-[#D4A373] text-[#2D241E] font-bold text-xs w-6 h-6 rounded-full flex items-center justify-center">
-                    0
-                </div>
+                <div id="cart-count-badge" class="bg-[#1A3021] text-[#F4F1EA] text-xs w-6 h-6 rounded-full flex items-center justify-center">0</div>
                 <div class="text-left">
                     <p id="floating-total" class="font-bold text-sm">Rp0</p>
-                    <p class="text-xs text-[#EADBC8]">Total Pesanan Sementara</p>
+                    <p class="text-xs text-[#1A3021]/70 font-medium">Total Pesanan Sementara</p>
                 </div>
             </div>
-            <div class="font-semibold text-sm bg-white/10 px-3 py-1.5 rounded-xl">
-                Lihat Pesanan →
-            </div>
+            <div class="text-sm bg-[#1A3021]/10 px-3 py-1.5 rounded-xl">Lihat Pesanan →</div>
         </button>
     </div>
 
-
     <!-- Cart Modal -->
-    <div id="cart-modal"
-         class="fixed inset-0 z-50 bg-[#2D241E]/50 backdrop-blur-sm hidden flex flex-col justify-end">
-        <div class="bg-[#FBF9F5] w-full max-w-md mx-auto rounded-t-3xl max-h-[90vh] flex flex-col overflow-hidden">
-
-            <div class="p-5 border-b border-[#EADBC8] flex justify-between items-center bg-white">
+    <div id="cart-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex flex-col justify-end">
+        <div class="bg-[#20392A] w-full max-w-md mx-auto rounded-t-3xl max-h-[90vh] flex flex-col overflow-hidden border-t border-[#3A5D45]">
+            <div class="p-5 border-b border-[#3A5D45] flex justify-between items-center bg-[#1A3021]">
                 <div>
-                    <h2 class="font-bold text-lg">Keranjang Pesanan</h2>
-                    <p id="modal-table-info" class="text-xs text-[#8C6D53]">Meja --</p>
+                    <h2 class="font-bold text-lg text-[#F4F1EA]">Keranjang Pesanan</h2>
+                    <p id="modal-table-info" class="text-xs text-[#C2A667]">Meja --</p>
                 </div>
-                <button onclick="closeCartModal()"
-                        class="w-9 h-9 rounded-full bg-[#FBF9F5] flex items-center justify-center border border-[#EADBC8]">
-                    ✕
-                </button>
+                <button onclick="closeCartModal()" class="w-9 h-9 rounded-full bg-[#25402D] flex items-center justify-center border border-[#3A5D45] text-[#F4F1EA]">✕</button>
             </div>
-
             <div id="cart-items-container" class="p-5 overflow-y-auto flex-1 flex flex-col gap-4"></div>
-
-            <div class="p-5 bg-white border-t border-[#EADBC8] flex flex-col gap-4">
+            <div class="p-5 bg-[#1A3021] border-t border-[#3A5D45] flex flex-col gap-4">
                 <div>
-                    <label class="block text-xs font-semibold text-[#8C6D53] uppercase tracking-wider mb-1.5">
-                        Catatan Pesanan (Opsional)
-                    </label>
-                    <input type="text" id="order-notes"
-                           placeholder="Contoh: Less sugar, tanpa es, dst..."
-                           class="w-full bg-[#FBF9F5] border border-[#EADBC8] rounded-xl px-4 py-2.5 text-sm focus:outline-none">
+                    <label class="block text-xs font-semibold text-[#C2A667] uppercase tracking-wider mb-1.5">Catatan Pesanan (Opsional)</label>
+                    <input type="text" id="order-notes" placeholder="Contoh: Kurang manis, es dipisah..." class="w-full bg-[#25402D] border border-[#3A5D45] rounded-xl px-4 py-2.5 text-sm focus:outline-none text-[#F4F1EA] placeholder-[#8A9E90]">
                 </div>
-
                 <div class="flex justify-between items-center">
-                    <span class="text-sm text-[#8C6D53]">Total Pembayaran</span>
-                    <span id="modal-total-price" class="text-xl font-bold">Rp0</span>
+                    <span class="text-sm text-[#D1C7BD]">Total Pembayaran</span>
+                    <span id="modal-total-price" class="text-xl font-bold text-[#C2A667]">Rp0</span>
                 </div>
-
-                <div id="checkout-error-msg"
-                     class="hidden bg-[#8C3D2B]/10 border border-[#8C3D2B]/30 rounded-xl p-3 text-xs text-[#8C3D2B] text-center font-medium">
-                </div>
-
-                <button id="checkout-btn" onclick="submitOrder()"
-                        class="w-full bg-[#2D241E] text-white py-4 rounded-xl font-bold">
-                    Pesan Sekarang
-                </button>
+                <div id="checkout-error-msg" class="hidden bg-rose-900/30 border border-rose-800/40 rounded-xl p-3 text-xs text-rose-300 text-center font-medium"></div>
+                <button id="checkout-btn" onclick="submitOrder()" class="w-full bg-[#C2A667] text-[#1A3021] py-4 rounded-xl font-bold hover:bg-[#d4b778] transition">Pesan Sekarang</button>
             </div>
-
         </div>
     </div>
 
-
-    <!-- Confirmation -->
-    <div id="confirmation-screen"
-         class="fixed inset-0 z-50 bg-[#FBF9F5] hidden flex flex-col items-center justify-center p-6 text-center">
-        <div class="max-w-md w-full bg-white border border-[#EADBC8] rounded-3xl p-8 shadow-xl">
-
-            <div class="w-16 h-16 bg-[#D4A373]/20 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">✓</div>
-            <h2 class="text-2xl font-bold mb-1">Pesanan Diterima</h2>
-            <p class="text-xs uppercase tracking-widest text-[#8C6D53] mb-6">Sedjati Coffee</p>
-
-            <div class="w-full bg-[#FBF9F5] rounded-2xl p-4 mb-6 border border-[#EADBC8] text-left flex flex-col gap-2">
+    <!-- Confirmation Screen -->
+    <div id="confirmation-screen" class="fixed inset-0 z-50 bg-[#1A3021] hidden flex flex-col items-center justify-center p-6 text-center">
+        <div class="max-w-md w-full bg-[#20392A] border border-[#3A5D45] rounded-3xl p-8 shadow-2xl">
+            <div class="w-16 h-16 bg-[#C2A667]/20 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 text-[#C2A667]">✓</div>
+            <h2 class="text-2xl font-bold mb-1">Pesanan Berhasil!</h2>
+            <p class="text-xs uppercase tracking-widest text-[#C2A667] mb-6">Sedjati Coffee</p>
+            <div class="w-full bg-[#1A3021] rounded-2xl p-4 mb-6 border border-[#3A5D45] text-left flex flex-col gap-2">
                 <div class="flex justify-between text-sm">
-                    <span>Nomor Pesanan</span>
-                    <span id="conf-order-no" class="font-bold">#--</span>
+                    <span class="text-[#D1C7BD]">Nomor Pesanan</span>
+                    <span id="conf-order-no" class="font-bold text-[#C2A667]">#--</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                    <span>Nomor Meja</span>
+                    <span class="text-[#D1C7BD]">Nomor Meja</span>
                     <span id="conf-table-no" class="font-bold">Meja --</span>
                 </div>
-                <hr class="border-[#EADBC8]">
+                <hr class="border-[#3A5D45]">
                 <div id="conf-items-list" class="flex flex-col gap-1 text-sm"></div>
-                <hr class="border-[#EADBC8]">
+                <hr class="border-[#3A5D45]">
                 <div class="flex justify-between font-bold">
                     <span>Total</span>
-                    <span id="conf-total-price">Rp0</span>
+                    <span id="conf-total-price" class="text-[#C2A667]">Rp0</span>
                 </div>
-                <div id="conf-notes-box" class="mt-2 text-xs text-[#8C6D53] italic hidden">
+                <div id="conf-notes-box" class="mt-2 text-xs text-[#D1C7BD] italic hidden">
                     Catatan: <span id="conf-notes-text"></span>
                 </div>
             </div>
-
-            <p class="text-sm font-medium text-[#5C4033] bg-[#EADBC8]/20 py-3 px-4 rounded-xl w-full border border-[#EADBC8]/60 mb-6">
-                Silakan tunggu pesanan diproses.
-            </p>
-
-            <button onclick="closeConfirmation()" class="text-xs text-[#8C6D53] underline">
-                Tutup / Kembali ke menu
-            </button>
+            <p class="text-sm font-medium text-[#D1C7BD] bg-[#25402D] py-3 px-4 rounded-xl w-full border border-[#3A5D45] mb-6">Mohon tunggu, pesanan Anda sedang disiapkan oleh barista.</p>
+            <button onclick="closeConfirmation()" class="text-xs text-[#C2A667] underline">Tutup / Kembali ke Menu</button>
         </div>
     </div>
-
-
-    <!-- Info Toko Modal -->
-    <div id="info-modal"
-         class="fixed inset-0 z-50 bg-[#2D241E]/50 backdrop-blur-sm hidden flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-[#EADBC8]">
-            <div class="flex justify-between items-start mb-4">
-                <div>
-                    <h3 class="font-bold text-lg">Sedjati Coffee</h3>
-                    <p class="text-xs text-[#8C6D53]">Kedai Kopi · Majalengka</p>
-                </div>
-                <button onclick="closeInfoModal()"
-                        class="w-8 h-8 rounded-full bg-[#FBF9F5] flex items-center justify-center border border-[#EADBC8]">✕</button>
-            </div>
-
-            <div class="flex flex-col gap-3 text-sm">
-                <div class="flex gap-3">
-                    <span>📍</span>
-                    <span>Jl. Raya K.H. Abdul Halim No.165, Majalengka Kulon, Majalengka</span>
-                </div>
-                <a href="https://wa.me/6285721216000" target="_blank" class="flex gap-3 items-center">
-                    <span>💬</span>
-                    <span class="underline text-[#5C4033]">+62 857-2121-6000 (WhatsApp)</span>
-                </a>
-                <a href="https://sedjaticoffee.id" target="_blank" class="flex gap-3 items-center">
-                    <span>🌐</span>
-                    <span class="underline text-[#5C4033]">sedjaticoffee.id</span>
-                </a>
-            </div>
-        </div>
-    </div>
-
 </div>
 
-
-<!-- ========================================================= -->
-<!-- ADMIN VIEW -->
-<!-- ========================================================= -->
-
+<!-- =================ADMIN VIEW================= -->
 <div id="admin-view" class="w-full flex flex-col flex-1 hidden">
-
-    <!-- PIN MODAL -->
-    <div id="admin-pin-modal"
-         class="fixed inset-0 z-50 bg-[#2D241E]/80 backdrop-blur-sm flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-[#EADBC8] text-center">
-            <div class="w-12 h-12 bg-[#D4A373]/20 rounded-full flex items-center justify-center text-xl mx-auto mb-3">🔒</div>
-            <h3 class="font-bold text-lg mb-1">Akses Dapur / Admin</h3>
-            <p class="text-xs text-[#8C6D53] mb-4">Masukkan PIN Akses untuk melihat pesanan.</p>
-            <input type="password" id="admin-pin-input" placeholder="PIN"
-                   class="w-full bg-[#FBF9F5] border border-[#EADBC8] rounded-xl px-4 py-3 text-center text-lg tracking-widest mb-3 focus:outline-none">
-            <p id="pin-error" class="text-xs text-[#8C3D2B] mb-3 hidden">PIN salah. Silakan coba lagi.</p>
-            <button onclick="verifyAdminPin()" class="w-full bg-[#2D241E] text-white py-3 rounded-xl font-bold text-sm shadow">
-                Masuk Dashboard
-            </button>
+    <!-- PIN Modal -->
+    <div id="admin-pin-modal" class="fixed inset-0 z-50 bg-[#1A3021]/90 backdrop-blur-sm flex items-center justify-center p-6">
+        <div class="bg-[#20392A] w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-[#3A5D45] text-center">
+            <div class="w-12 h-12 bg-[#C2A667]/20 rounded-full flex items-center justify-center text-xl mx-auto mb-3 text-[#C2A667]">🔒</div>
+            <h3 class="font-bold text-lg mb-1">Akses Admin / Kasir</h3>
+            <p class="text-xs text-[#D1C7BD] mb-4">Masukkan PIN Akses untuk melihat pesanan.</p>
+            <input type="password" id="admin-pin-input" placeholder="PIN" class="w-full bg-[#1A3021] border border-[#3A5D45] rounded-xl px-4 py-3 text-center text-lg tracking-widest mb-3 focus:outline-none text-[#F4F1EA]">
+            <p id="pin-error" class="text-xs text-rose-300 mb-3 hidden">PIN salah. Coba lagi (Default: 1945).</p>
+            <button onclick="verifyAdminPin()" class="w-full bg-[#C2A667] text-[#1A3021] py-3 rounded-xl font-bold text-sm shadow">Masuk Dashboard</button>
         </div>
     </div>
 
-    <!-- ADMIN HEADER -->
-    <header class="sticky top-0 z-30 bg-[#2D241E] text-white px-5 py-4 shadow-md">
+    <!-- Admin Header -->
+    <header class="sticky top-0 z-30 bg-[#1A3021] text-white px-5 py-4 border-b border-[#2C4A35]">
         <div class="max-w-xl mx-auto flex justify-between items-center">
             <div>
-                <h1 class="text-xs tracking-widest uppercase text-[#D4A373] font-semibold">Kitchen Display</h1>
-                <p class="text-lg font-bold">Sedjati Coffee - Live Orders</p>
+                <h1 class="text-xs tracking-widest uppercase text-[#C2A667] font-semibold">Kitchen & Table Manager</h1>
+                <p class="text-lg font-bold">Sedjati Coffee - Dashboard</p>
             </div>
             <div class="flex items-center gap-2">
-                <span id="realtime-status" class="w-2.5 h-2.5 rounded-full bg-gray-400" title="Belum terhubung"></span>
-                <button onclick="loadAdminOrders()"
-                        class="bg-white/10 hover:bg-white/20 text-xs px-3 py-1.5 rounded-lg border border-white/20">
-                    Refresh
-                </button>
+                <span id="realtime-status" class="w-2.5 h-2.5 rounded-full bg-gray-400" title="Status Koneksi"></span>
+                <button onclick="switchAdminTab('orders')" id="tab-btn-orders" class="bg-[#C2A667] text-[#1A3021] text-xs px-3 py-1.5 rounded-lg font-bold">Pesanan</button>
+                <button onclick="switchAdminTab('qrs')" id="tab-btn-qrs" class="bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45] text-xs px-3 py-1.5 rounded-lg font-semibold">QR Meja</button>
             </div>
         </div>
     </header>
 
-    <!-- ADMIN MAIN -->
+    <!-- Admin Main -->
     <main class="flex-1 max-w-xl w-full mx-auto p-4 flex flex-col gap-4">
-
-        <div id="admin-load-error" class="hidden bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl p-4 text-sm"></div>
-
-        <div class="flex gap-2 overflow-x-auto no-scrollbar py-1">
-            <button onclick="filterAdminStatus('all')"
-                    class="admin-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#2D241E] text-white shrink-0"
-                    data-status="all">Semua</button>
-            <button onclick="filterAdminStatus('new')"
-                    class="admin-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#5C4033] border border-[#EADBC8] shrink-0"
-                    data-status="new">Baru (New)</button>
-            <button onclick="filterAdminStatus('accepted')"
-                    class="admin-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#5C4033] border border-[#EADBC8] shrink-0"
-                    data-status="accepted">Diproses</button>
-            <button onclick="filterAdminStatus('completed')"
-                    class="admin-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#5C4033] border border-[#EADBC8] shrink-0"
-                    data-status="completed">Selesai</button>
-        </div>
-
-        <div id="admin-orders-list" class="flex flex-col gap-4">
-            <div class="bg-white p-8 rounded-2xl text-center text-sm text-[#8C6D53] border border-[#EADBC8]">
-                Masukkan PIN untuk memuat pesanan.
+        <!-- Orders Section -->
+        <div id="admin-section-orders" class="flex flex-col gap-4">
+            <div id="admin-load-error" class="hidden bg-rose-900/30 border border-rose-800 text-rose-300 rounded-2xl p-4 text-sm"></div>
+            <!-- Filter Tabs -->
+            <div class="flex gap-2 overflow-x-auto no-scrollbar py-1">
+                <button onclick="filterAdminStatus('all')" class="admin-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#C2A667] text-[#1A3021] shrink-0" data-status="all">Semua</button>
+                <button onclick="filterAdminStatus('new')" class="admin-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45] shrink-0" data-status="new">Baru</button>
+                <button onclick="filterAdminStatus('accepted')" class="admin-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45] shrink-0" data-status="accepted">Diproses</button>
+                <button onclick="filterAdminStatus('completed')" class="admin-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45] shrink-0" data-status="completed">Selesai</button>
+            </div>
+            <div id="admin-orders-list" class="flex flex-col gap-4">
+                <div class="bg-[#20392A] p-8 rounded-2xl text-center text-sm text-[#D1C7BD] border border-[#3A5D45]">Memuat pesanan...</div>
             </div>
         </div>
 
+        <!-- QR Generator Section -->
+        <div id="admin-section-qrs" class="hidden flex flex-col gap-4">
+            <div class="bg-[#20392A] p-5 rounded-2xl border border-[#3A5D45]">
+                <h3 class="font-bold text-base mb-1">Generator QR Meja (01 - 10)</h3>
+                <p class="text-xs text-[#D1C7BD] mb-4">Cetak QR code ini untuk ditaruh di setiap meja kafe.</p>
+                <div id="qr-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+            </div>
+        </div>
     </main>
 </div>
 
-
-<!-- ========================================================= -->
-<!-- JAVASCRIPT -->
-<!-- ========================================================= -->
+<!-- =================JAVASCRIPT================= -->
 <script>
+    // =================SUPABASE CONFIG=================
+    const SUPABASE_URL = "https://itmukoioivvixreyxczj.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0bXVrb2lvaXZ2aXhyZXl4Y3pqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NDA2NDIsImV4cCI6MjEwNDAxNjY0Mn0.JeEgQ1lpwgC3Ns5TrxDTJpVih5KdJrcnXBh6QzfzNrI";
 
-    // =========================================================
-    // SUPABASE CONFIG
-    // PENTING: Ganti dengan credential Supabase project BARU
-    // milik Sedjati Coffee (bukan project client sebelumnya).
-    // Gunakan anon / publishable key. JANGAN pakai service_role key.
-    // =========================================================
+    let supabaseClient = null;
+    try {
+        if (window.supabase && SUPABASE_URL !== "ISI LINK SUPABASE") {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+    } catch(e) {
+        console.error("Supabase init error:", e);
+    }
 
-    const SUPABASE_URL = "https://uwdkcmwgjxdlwtbkbonv.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3ZGtjbXdnanhkbHd0Ymtib252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0Mzg2ODUsImV4cCI6MjEwNDAxNDY4NX0.3rovNCPjSXW7oGxUXaNSJaETwEV19GgK2tkVo2NVre4";
-
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-
-    // =========================================================
-    // MENU DATA - SEDJATI COFFEE
-    // Kategori dibuat eksplisit di CATEGORY_ORDER supaya urutan
-    // tab & tampilan menu konsisten dan rapi.
-    // "image" merujuk ke file di assets/products/. Jika file
-    // belum ada, foto otomatis fallback ke ikon (lihat renderMenu).
-    // =========================================================
-
-    const CATEGORY_ORDER = [
-        "Espresso",
-        "Tambahan",
-        "Signature",
-        "Manual Brew",
-        "Matcha",
-        "Non Coffee",
-        "Bigger Size (1 Liter)",
-        "Dessert",
-        "Pastry"
-    ];
-
+    // =================MENU DATA SEDJATI COFFEE=================
     const menuData = [
-        // --- ESPRESSO ---
-        { id: 1,  name: "Black - Espresso",              description: "Espresso murni, pahit dan pekat.",              price: 25000,  category: "Espresso",  image: "black-espresso.jpg" },
-        { id: 2,  name: "Black - Long Black",             description: "Espresso dengan tambahan air panas, lebih ringan.", price: 25000,  category: "Espresso",  image: "black-long-black.jpg" },
-        { id: 3,  name: "Black - Sedjatinya Coffee",      description: "Racikan khas rumah Sedjati Coffee.",            price: 25000,  category: "Espresso",  image: "black-sedjatinya-coffee.jpg" },
-        { id: 4,  name: "White - Cappuccino",             description: "Espresso, susu steam, dan foam lembut.",        price: 28000,  category: "Espresso",  image: "white-cappuccino.jpg" },
-        { id: 5,  name: "White - Latte",                  description: "Espresso dengan susu steam yang creamy.",       price: 28000,  category: "Espresso",  image: "white-latte.jpg" },
-        { id: 6,  name: "Magic",                          description: "Double ristretto dengan susu, kental dan kuat.", price: 28000,  category: "Espresso",  image: "magic.jpg" },
+        // Espresso
+        { id: 1, name: "Black", description: "Espresso | Long Black | Sedjatinya Coffee", price: 25000, category: "Espresso" },
+        { id: 2, name: "White", description: "Cappuccino | Latte | Magic", price: 28000, category: "Espresso" },
+        { id: 3, name: "Magic", description: "Rich double ristretto with steamed milk", price: 28000, category: "Espresso" },
+        { id: 4, name: "Oat Milk Add-on", description: "Pilihan pengganti susu berbasis oat", price: 8000, category: "Espresso" },
+        { id: 5, name: "Extra Shot Espresso", description: "Tambahan 1 shot espresso", price: 7000, category: "Espresso" },
 
-        // --- TAMBAHAN (Add-on) ---
-        { id: 7,  name: "Tambahan Oat Milk",              description: "Ganti/tambah oat milk pada minuman pilihanmu. Pesan sebagai baris terpisah.", price: 8000, category: "Tambahan", image: "oat-milk.jpg" },
-        { id: 8,  name: "Tambahan Extra Shot Espresso",   description: "Tambah satu shot espresso ekstra pada minumanmu. Pesan sebagai baris terpisah.", price: 7000, category: "Tambahan", image: "extra-shot-espresso.jpg" },
+        // Signature
+        { id: 6, name: "Sahabat Sedjati", description: "Temani Setiap Harimu (Hot / Ice)", price: 27000, category: "Signature" },
+        { id: 7, name: "Fruitycano", description: "Tropicano Peachpass | Applecrano Cranberry", price: 27000, category: "Signature" },
+        { id: 8, name: "Creamycano Mont Blanc", description: "Signature creamy coffee with Mont Blanc twist", price: 33000, category: "Signature" },
+        { id: 9, name: "Creamycano Butterscotch", description: "Signature creamy coffee with butterscotch flavor", price: 30000, category: "Signature" },
+        { id: 10, name: "Dirty Latte", description: "Espresso poured over rich layered cold milk", price: 33000, category: "Signature" },
 
-        // --- SIGNATURE ---
-        { id: 9,  name: "Sahabat Sedjati",                description: "Signature drink andalan Sedjati Coffee.",       price: 27000, category: "Signature", image: "sahabat-sedjati.jpg" },
-        { id: 10, name: "Fruitycano - Tropicano Peachpass", description: "Americano segar dengan sentuhan peach & passion fruit.", price: 27000, category: "Signature", image: "fruitycano-tropicano-peachpass.jpg" },
-        { id: 11, name: "Fruitycano - Applecrano Cranberry", description: "Americano segar dengan apel dan cranberry.",  price: 27000, category: "Signature", image: "fruitycano-applecrano-cranberry.jpg" },
-        { id: 12, name: "Creamycano Mont Blanc",          description: "Perpaduan creamy dengan cita rasa chestnut Mont Blanc.", price: 33000, category: "Signature", image: "creamycano-mont-blanc.jpg" },
-        { id: 13, name: "Creamycano Butterscotch",        description: "Creamy coffee dengan manisnya butterscotch.",   price: 30000, category: "Signature", image: "creamycano-butterscotch.jpg" },
-        { id: 14, name: "Dirty Latte",                    description: "Espresso dituang di atas susu dingin, ala dirty coffee.", price: 33000, category: "Signature", image: "dirty-latte.jpg" },
+        // Manual Brew
+        { id: 11, name: "Filter (V60 / Kalita Wave)", description: "Hot / Japanese style manual brew coffee", price: 28000, category: "Manual Brew" },
 
-        // --- MANUAL BREW ---
-        { id: 15, name: "Filter V60 / Kalita Wave",       description: "Manual brew single origin, disesuaikan dengan biji pilihan.", price: 28000, category: "Manual Brew", image: "filter-v60-kalita-wave.jpg" },
+        // Matcha
+        { id: 12, name: "Matcha Latte", description: "Hot / Ice premium Japanese matcha", price: 30000, category: "Matcha" },
+        { id: 13, name: "Creamy Matcha", description: "Smooth creamy matcha blend", price: 30000, category: "Matcha" },
 
-        // --- MATCHA ---
-        { id: 16, name: "Matcha Latte",                   description: "Matcha premium dengan susu segar.",             price: 30000, category: "Matcha", image: "matcha-latte.jpg" },
-        { id: 17, name: "Creamy Matcha",                  description: "Matcha dengan tekstur creamy yang lebih kental.", price: 30000, category: "Matcha", image: "creamy-matcha.jpg" },
+        // Non Coffee
+        { id: 14, name: "Single Origin Chocolate", description: "Hot / Ice rich single origin chocolate", price: 30000, category: "Non Coffee" },
+        { id: 15, name: "Earl Grey Milk Tea", description: "Hot / Ice fragrant milk tea with Earl Grey", price: 30000, category: "Non Coffee" },
 
-        // --- NON COFFEE ---
-        { id: 18, name: "Single Origin Chocolate",        description: "Cokelat premium single origin, creamy dan rich.", price: 30000, category: "Non Coffee", image: "single-origin-chocolate.jpg" },
-        { id: 19, name: "Earl Grey Milk Tea",              description: "Teh earl grey dipadukan dengan susu segar.",    price: 30000, category: "Non Coffee", image: "earl-grey-milk-tea.jpg" },
+        // Bigger Size (1 Liter)
+        { id: 16, name: "Sahabat Sedjati - 1 Liter", description: "Botol besar untuk dinikmati bersama", price: 115000, category: "Bigger Size" },
+        { id: 17, name: "Chocolatte - 1 Liter", description: "Single origin chocolate 1 liter", price: 120000, category: "Bigger Size" },
+        { id: 18, name: "Creamy Matcha - 1 Liter", description: "Creamy matcha 1 liter", price: 120000, category: "Bigger Size" },
+        { id: 19, name: "Matcha Latte - 1 Liter", description: "Matcha latte 1 liter", price: 120000, category: "Bigger Size" },
+        { id: 20, name: "Earl Grey - 1 Liter", description: "Earl grey milk tea 1 liter", price: 120000, category: "Bigger Size" },
+        { id: 21, name: "Tropicano Peachpass - 1 Liter", description: "Fruity refreshing peachpass 1 liter", price: 100000, category: "Bigger Size" },
+        { id: 22, name: "Applecrano Cranberry - 1 Liter", description: "Refreshing cranberry blend 1 liter", price: 100000, category: "Bigger Size" },
 
-        // --- BIGGER SIZE (1 LITER) ---
-        { id: 20, name: "Sahabat Sedjati (1 Liter)",      description: "Sahabat Sedjati dalam kemasan 1 liter, cocok untuk share.", price: 115000, category: "Bigger Size (1 Liter)", image: "sahabat-sedjati-1l.jpg" },
-        { id: 21, name: "Chocolatte (1 Liter)",           description: "Chocolatte dalam kemasan 1 liter.",             price: 120000, category: "Bigger Size (1 Liter)", image: "chocolatte-1l.jpg" },
-        { id: 22, name: "Creamy Matcha (1 Liter)",        description: "Creamy Matcha dalam kemasan 1 liter.",          price: 120000, category: "Bigger Size (1 Liter)", image: "creamy-matcha-1l.jpg" },
-        { id: 23, name: "Matcha Latte (1 Liter)",         description: "Matcha Latte dalam kemasan 1 liter.",           price: 120000, category: "Bigger Size (1 Liter)", image: "matcha-latte-1l.jpg" },
-        { id: 24, name: "Earl Grey (1 Liter)",            description: "Earl Grey Milk Tea dalam kemasan 1 liter.",     price: 120000, category: "Bigger Size (1 Liter)", image: "earl-grey-1l.jpg" },
-        { id: 25, name: "Tropicano Peachpass (1 Liter)",  description: "Tropicano Peachpass dalam kemasan 1 liter.",    price: 100000, category: "Bigger Size (1 Liter)", image: "tropicano-peachpass-1l.jpg" },
-        { id: 26, name: "Applecrano Cranberry (1 Liter)", description: "Applecrano Cranberry dalam kemasan 1 liter.",   price: 100000, category: "Bigger Size (1 Liter)", image: "applecrano-cranberry-1l.jpg" },
+        // Dessert
+        { id: 23, name: "Pudding Banana Biscuit Matcha", description: "Pudding lembut dengan biskuit pisang dan saus matcha", price: 26000, category: "Dessert" },
+        { id: 24, name: "Pudding Banana Biscuit Chocolate", description: "Pudding lembut dengan biskuit pisang dan saus cokelat", price: 30000, category: "Dessert" },
 
-        // --- DESSERT ---
-        { id: 27, name: "Pudding Banana Biscuit Matcha",  description: "Pudding pisang & biskuit dengan topping matcha.", price: 26000, category: "Dessert", image: "pudding-banana-biscuit-matcha.jpg" },
-        { id: 28, name: "Pudding Banana Biscuit Chocolate", description: "Pudding pisang & biskuit dengan topping cokelat.", price: 30000, category: "Dessert", image: "pudding-banana-biscuit-chocolate.jpg" },
-
-        // --- PASTRY ---
-        { id: 29, name: "Croissant Butter Plain",         description: "Croissant butter klasik, renyah berlapis.",     price: 25000, category: "Pastry", image: "croissant-butter-plain.jpg" },
-        { id: 30, name: "Pain au Chocolate",              description: "Pastry lapis mentega dengan isian cokelat.",    price: 28000, category: "Pastry", image: "pain-au-chocolate.jpg" },
-        { id: 31, name: "Salted Caramel Almond",          description: "Pastry dengan salted caramel dan taburan almond.", price: 33000, category: "Pastry", image: "salted-caramel-almond.jpg" },
-        { id: 32, name: "Cranberry Pistacio",             description: "Pastry dengan cranberry dan pistachio.",        price: 33000, category: "Pastry", image: "cranberry-pistacio.jpg" },
-        { id: 33, name: "Croissant Chicken Cheese",       description: "Croissant gurih isi ayam dan keju.",            price: 33000, category: "Pastry", image: "croissant-chicken-cheese.jpg" },
-        { id: 34, name: "Croissant Sausage Cheese",       description: "Croissant gurih isi sosis dan keju.",           price: 33000, category: "Pastry", image: "croissant-sausage-cheese.jpg" },
-        { id: 35, name: "Japanese Cheesecake",            description: "Cheesecake lembut ala Jepang, ringan dan fluffy.", price: 28000, category: "Pastry", image: "japanese-cheesecake.jpg" },
-        { id: 36, name: "Cranberry Cheese",               description: "Pastry cream cheese dengan cranberry.",         price: 28000, category: "Pastry", image: "cranberry-cheese.jpg" }
+        // Pastry
+        { id: 25, name: "Croissant Butter Plain", description: "Classic buttery crispy croissant", price: 25000, category: "Pastry" },
+        { id: 26, name: "Pain au Chocolate", description: "Flaky pastry filled with chocolate", price: 28000, category: "Pastry" },
+        { id: 27, name: "Salted Caramel Almond", description: "Croissant with salted caramel and crunchy almonds", price: 33000, category: "Pastry" },
+        { id: 28, name: "Cranberry Pistacio", description: "Pastry with dried cranberries and pistachios", price: 33000, category: "Pastry" },
+        { id: 29, name: "Croissant Chicken Cheese", description: "Savory croissant stuffed with chicken and cheese", price: 33000, category: "Pastry" },
+        { id: 30, name: "Croissant Sausage Cheese", description: "Savory croissant with sausage and melted cheese", price: 33000, category: "Pastry" },
+        { id: 31, name: "Japanese Cheesecake", description: "Light, fluffy, and smooth Japanese cheesecake", price: 28000, category: "Pastry" },
+        { id: 32, name: "Cranberry Cheese", description: "Pastry with cream cheese and cranberry", price: 28000, category: "Pastry" }
     ];
 
-
-    // =========================================================
-    // APP STATE
-    // =========================================================
-
+    // =================APP STATE=================
     let currentTable = null;
     let activeCategory = "Semua";
     let cart = {};
     let cartStorageKey = "";
 
-    // =========================================================
-    // ADMIN STATE
-    // =========================================================
-
+    // =================ADMIN STATE=================
     let adminOrders = [];
     let adminFilter = "all";
-
-    // PENTING: Ganti PIN ini sebelum go-live. Ini hanya proteksi
-    // UI sederhana, bukan autentikasi sungguhan.
-    const ADMIN_PIN = "SEDJATI2024";
-
+    const ADMIN_PIN = "1945";
     let realtimeChannel = null;
 
-
-    // =========================================================
-    // INITIALIZE
-    // =========================================================
-
     window.addEventListener("DOMContentLoaded", () => {
-
-        loadBrandLogo();
-
         const params = new URLSearchParams(window.location.search);
 
         // ADMIN MODE
@@ -445,19 +293,14 @@
 
         // CUSTOMER MODE
         const tableParam = params.get("table");
-
         if (tableParam) {
             currentTable = tableParam;
-
             document.getElementById("table-display").textContent = `Meja ${currentTable}`;
             document.getElementById("modal-table-info").textContent = `Meja ${currentTable}`;
-
             cartStorageKey = `sedjati_cart_table_${currentTable}`;
-
             const savedCart = localStorage.getItem(cartStorageKey);
             if (savedCart) {
-                try { cart = JSON.parse(savedCart); }
-                catch (error) { cart = {}; }
+                try { cart = JSON.parse(savedCart); } catch (e) { cart = {}; }
             }
         } else {
             document.getElementById("table-display").textContent = "Meja Tidak Ditemukan";
@@ -465,147 +308,68 @@
             document.getElementById("table-error-banner").classList.remove("hidden");
         }
 
-        renderCategoryTabs();
         renderMenu();
         updateCartUI();
     });
 
-
-    // =========================================================
-    // BRANDING: LOGO (fallback ke emoji jika file belum diupload)
-    // =========================================================
-
-    function loadBrandLogo() {
-        const img = new Image();
-        img.onload = function () {
-            const wrap = document.getElementById("brand-logo-wrap");
-            wrap.innerHTML = "";
-            img.className = "w-full h-full object-cover";
-            wrap.appendChild(img);
-        };
-        img.onerror = function () { /* biarkan fallback emoji tampil */ };
-        img.src = "assets/logo/logo.png";
-    }
-
-
-    // =========================================================
-    // INFO TOKO MODAL
-    // =========================================================
-
-    function openInfoModal() {
-        document.getElementById("info-modal").classList.remove("hidden");
-    }
-
-    function closeInfoModal() {
-        document.getElementById("info-modal").classList.add("hidden");
-    }
-
-
-    // =========================================================
-    // CUSTOMER FUNCTIONS
-    // =========================================================
-
-    function renderCategoryTabs() {
-        const wrap = document.getElementById("category-tabs");
-        if (!wrap) return;
-
-        const categories = ["Semua", ...CATEGORY_ORDER];
-
-        wrap.innerHTML = categories.map(cat => {
-            const active = cat === activeCategory;
-            const cls = active
-                ? "cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-[#2D241E] text-white"
-                : "cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-white text-[#5C4033] border border-[#EADBC8]";
-            return `<button onclick="filterCategory('${cat}')" class="${cls}" data-category="${cat}">${cat}</button>`;
-        }).join("");
-    }
-
+    // =================CUSTOMER FUNCTIONS=================
     function filterCategory(category) {
         activeCategory = category;
-
         document.querySelectorAll(".cat-btn").forEach(btn => {
             const active = btn.dataset.category === category;
             btn.className = active
-                ? "cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-[#2D241E] text-white"
-                : "cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-white text-[#5C4033] border border-[#EADBC8]";
+                ? "cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-[#C2A667] text-[#1A3021]"
+                : "cat-btn px-4 py-2 rounded-full text-sm font-medium shrink-0 bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45]";
         });
-
         renderMenu();
     }
 
     function renderMenu() {
         const menuList = document.getElementById("menu-list");
         if (!menuList) return;
-
         menuList.innerHTML = "";
 
-        const filtered = activeCategory === "Semua"
-            ? menuData
+        const filtered = activeCategory === "Semua" 
+            ? menuData 
             : menuData.filter(item => item.category === activeCategory);
 
-        let lastCategory = null;
-
         filtered.forEach(item => {
-
-            // Tampilkan header kategori saat mode "Semua" agar menu tetap jelas terkelompok
-            if (activeCategory === "Semua" && item.category !== lastCategory) {
-                lastCategory = item.category;
-                const heading = document.createElement("div");
-                heading.className = "text-xs font-bold uppercase tracking-widest text-[#8C6D53] mt-2 first:mt-0";
-                heading.textContent = item.category;
-                menuList.appendChild(heading);
-            }
-
             const qty = cart[item.id] || 0;
-
             const card = document.createElement("div");
-            card.className = "bg-white p-4 rounded-2xl border border-[#EADBC8]/70 shadow-sm flex items-center gap-4";
-
+            card.className = "bg-[#20392A] p-4 rounded-2xl border border-[#3A5D45] shadow-sm flex justify-between items-center gap-4";
             card.innerHTML = `
-                <div class="w-16 h-16 rounded-xl bg-[#EADBC8]/30 flex items-center justify-center overflow-hidden shrink-0 relative text-lg">
-                    <span>☕</span>
-                    <img src="assets/products/${item.image}" alt="${escapeHtml(item.name)}"
-                         class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">
-                </div>
-
-                <div class="flex-1 min-w-0">
-                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-[#EADBC8]/30 text-[#8C6D53] mb-1 uppercase tracking-wider">
-                        ${escapeHtml(item.category)}
+                <div class="flex-1">
+                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-[#25402D] text-[#C2A667] mb-1 uppercase tracking-wider border border-[#3A5D45]">
+                        ${item.category}
                     </span>
-                    <h3 class="font-bold text-base mb-0.5">${escapeHtml(item.name)}</h3>
-                    <p class="text-xs text-[#7A6B63] mb-2 leading-relaxed">${escapeHtml(item.description)}</p>
-                    <p class="font-semibold text-sm">Rp${item.price.toLocaleString("id-ID")}</p>
+                    <h3 class="font-bold text-base mb-0.5 text-[#F4F1EA]">${item.name}</h3>
+                    <p class="text-xs text-[#D1C7BD] mb-2 leading-relaxed">${item.description}</p>
+                    <p class="font-semibold text-sm text-[#C2A667]">Rp${item.price.toLocaleString("id-ID")}</p>
                 </div>
-
                 <div class="shrink-0">
                     ${qty === 0 ? `
-                        <button onclick="updateQuantity(${item.id}, 1)"
-                                class="bg-[#2D241E] text-white px-4 py-2 rounded-xl text-xs font-semibold">
-                            + Tambah
-                        </button>
+                        <button onclick="updateQuantity(${item.id}, 1)" class="bg-[#C2A667] text-[#1A3021] px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#d4b778] transition">+ Tambah</button>
                     ` : `
-                        <div class="flex items-center gap-2 bg-[#FBF9F5] border border-[#EADBC8] rounded-xl p-1">
-                            <button onclick="updateQuantity(${item.id}, -1)"
-                                    class="w-7 h-7 bg-white rounded-lg flex items-center justify-center font-bold">-</button>
-                            <span class="w-6 text-center font-bold text-sm">${qty}</span>
-                            <button onclick="updateQuantity(${item.id}, 1)"
-                                    class="w-7 h-7 bg-[#2D241E] text-white rounded-lg flex items-center justify-center font-bold">+</button>
+                        <div class="flex items-center gap-2 bg-[#1A3021] border border-[#3A5D45] rounded-xl p-1">
+                            <button onclick="updateQuantity(${item.id}, -1)" class="w-7 h-7 bg-[#25402D] text-[#F4F1EA] rounded-lg flex items-center justify-center font-bold">-</button>
+                            <span class="w-6 text-center font-bold text-sm text-[#F4F1EA]">${qty}</span>
+                            <button onclick="updateQuantity(${item.id}, 1)" class="w-7 h-7 bg-[#C2A667] text-[#1A3021] rounded-lg flex items-center justify-center font-bold">+</button>
                         </div>
                     `}
                 </div>
             `;
-
             menuList.appendChild(card);
         });
     }
 
     function updateQuantity(itemId, delta) {
-        if (!currentTable) return;
-
+        if (!currentTable) {
+            alert("Silakan buka halaman dengan parameter meja, contoh: ?table=01");
+            return;
+        }
         if (!cart[itemId]) cart[itemId] = 0;
         cart[itemId] += delta;
         if (cart[itemId] <= 0) delete cart[itemId];
-
         saveAndRefresh();
     }
 
@@ -620,7 +384,6 @@
     function getCartStats() {
         let totalItems = 0;
         let totalPrice = 0;
-
         for (const [id, qty] of Object.entries(cart)) {
             const item = menuData.find(menu => menu.id == id);
             if (item) {
@@ -628,14 +391,12 @@
                 totalPrice += item.price * qty;
             }
         }
-
         return { totalItems, totalPrice };
     }
 
     function updateCartUI() {
         const { totalItems, totalPrice } = getCartStats();
         const floating = document.getElementById("floating-cart");
-
         document.getElementById("cart-count-badge").textContent = totalItems;
         document.getElementById("floating-total").textContent = `Rp${totalPrice.toLocaleString("id-ID")}`;
 
@@ -644,7 +405,6 @@
         } else {
             floating.classList.add("translate-y-32", "opacity-0");
         }
-
         renderCartModalItems();
     }
 
@@ -662,71 +422,64 @@
         const container = document.getElementById("cart-items-container");
         const totalEl = document.getElementById("modal-total-price");
         if (!container || !totalEl) return;
-
         container.innerHTML = "";
-
         const entries = Object.entries(cart);
 
         if (entries.length === 0) {
-            container.innerHTML = `
-                <div class="text-center text-sm text-[#8C6D53] py-10">
-                    Keranjang masih kosong.
-                </div>
-            `;
+            container.innerHTML = `<div class="text-center py-8 text-[#D1C7BD] text-sm">Keranjang masih kosong.</div>`;
+            totalEl.textContent = "Rp0";
+            return;
         }
 
         let totalPrice = 0;
-
         entries.forEach(([id, qty]) => {
             const item = menuData.find(menu => menu.id == id);
             if (!item) return;
-
-            totalPrice += item.price * qty;
+            const subtotal = item.price * qty;
+            totalPrice += subtotal;
 
             const row = document.createElement("div");
-            row.className = "flex justify-between items-center";
+            row.className = "flex justify-between items-center py-3 border-b border-[#3A5D45]/40";
             row.innerHTML = `
-                <div>
-                    <p class="font-semibold text-sm">${escapeHtml(item.name)}</p>
-                    <p class="text-xs text-[#8C6D53]">Rp${item.price.toLocaleString("id-ID")} x ${qty}</p>
+                <div class="flex-1 pr-3">
+                    <h4 class="font-bold text-sm text-[#F4F1EA]">${item.name}</h4>
+                    <p class="text-xs text-[#D1C7BD]">Rp${item.price.toLocaleString("id-ID")} × ${qty}</p>
                 </div>
-                <div class="flex items-center gap-2 bg-[#FBF9F5] border border-[#EADBC8] rounded-xl p-1">
-                    <button onclick="updateQuantity(${item.id}, -1)"
-                            class="w-7 h-7 bg-white rounded-lg flex items-center justify-center font-bold">-</button>
-                    <span class="w-6 text-center font-bold text-sm">${qty}</span>
-                    <button onclick="updateQuantity(${item.id}, 1)"
-                            class="w-7 h-7 bg-[#2D241E] text-white rounded-lg flex items-center justify-center font-bold">+</button>
+                <div class="flex items-center gap-3">
+                    <span class="font-bold text-sm text-[#C2A667]">Rp${subtotal.toLocaleString("id-ID")}</span>
+                    <div class="flex items-center gap-1 bg-[#1A3021] border border-[#3A5D45] rounded-xl p-1">
+                        <button onclick="updateQuantity(${item.id}, -1)" class="w-6 h-6 bg-[#25402D] text-[#F4F1EA] rounded-md font-bold text-xs">-</button>
+                        <span class="w-5 text-center font-bold text-xs text-[#F4F1EA]">${qty}</span>
+                        <button onclick="updateQuantity(${item.id}, 1)" class="w-6 h-6 bg-[#C2A667] text-[#1A3021] rounded-md font-bold text-xs">+</button>
+                    </div>
                 </div>
             `;
             container.appendChild(row);
         });
-
         totalEl.textContent = `Rp${totalPrice.toLocaleString("id-ID")}`;
     }
-
-
-    // =========================================================
-    // SUBMIT ORDER
-    // =========================================================
 
     async function submitOrder() {
         if (!currentTable) {
             showCheckoutError("Silakan scan QR meja terlebih dahulu.");
             return;
         }
-
         const { totalItems, totalPrice } = getCartStats();
         if (totalItems === 0) return;
 
         const notes = document.getElementById("order-notes").value.trim();
         const button = document.getElementById("checkout-btn");
         const errorEl = document.getElementById("checkout-error-msg");
-
         errorEl.classList.add("hidden");
+
         button.disabled = true;
         button.textContent = "Mengirim pesanan...";
 
         try {
+            if (!supabaseClient) {
+                throw new Error("Koneksi Supabase belum dikonfigurasi.");
+            }
+
             const { data, error } = await supabaseClient.rpc("create_order", {
                 p_table_number: currentTable,
                 p_items: cart,
@@ -736,28 +489,28 @@
 
             if (error) throw error;
 
-            showConfirmationScreen(data, totalPrice, notes);
+            // Menggunakan nomor order yang dikembalikan dari RPC Supabase
+            const orderNum = data !== undefined && data !== null ? data : "--";
 
+            showConfirmationScreen(orderNum, totalPrice, notes);
             cart = {};
             document.getElementById("order-notes").value = "";
             if (cartStorageKey) localStorage.removeItem(cartStorageKey);
-
             renderMenu();
             updateCartUI();
             closeCartModal();
-
         } catch (error) {
             console.error("Submit order error:", error);
-            showCheckoutError("Gagal mengirim pesanan. Silakan coba kembali.");
+            showCheckoutError(`Gagal mengirim pesanan: ${error.message || "Terjadi kesalahan sistem."}`);
         } finally {
             button.disabled = false;
             button.textContent = "Pesan Sekarang";
         }
     }
 
-    function showCheckoutError(message) {
+    function showCheckoutError(msg) {
         const el = document.getElementById("checkout-error-msg");
-        el.textContent = message;
+        el.textContent = msg;
         el.classList.remove("hidden");
     }
 
@@ -768,17 +521,12 @@
 
         const list = document.getElementById("conf-items-list");
         list.innerHTML = "";
-
         Object.entries(cart).forEach(([id, qty]) => {
             const item = menuData.find(menu => menu.id == id);
             if (!item) return;
-
             const div = document.createElement("div");
-            div.className = "flex justify-between text-xs";
-            div.innerHTML = `
-                <span>${qty}x ${escapeHtml(item.name)}</span>
-                <span>Rp${(item.price * qty).toLocaleString("id-ID")}</span>
-            `;
+            div.className = "flex justify-between text-xs text-[#D1C7BD]";
+            div.innerHTML = `<span>${qty}x ${item.name}</span><span>Rp${(item.price * qty).toLocaleString("id-ID")}</span>`;
             list.appendChild(div);
         });
 
@@ -789,7 +537,6 @@
         } else {
             notesBox.classList.add("hidden");
         }
-
         document.getElementById("confirmation-screen").classList.remove("hidden");
     }
 
@@ -797,237 +544,209 @@
         document.getElementById("confirmation-screen").classList.add("hidden");
     }
 
-
-    // =========================================================
-    // ADMIN LOGIN
-    // =========================================================
-
+    // =================ADMIN FUNCTIONS=================
     function verifyAdminPin() {
         const input = document.getElementById("admin-pin-input");
         const errorEl = document.getElementById("pin-error");
-
         if (input.value === ADMIN_PIN) {
             errorEl.classList.add("hidden");
             document.getElementById("admin-pin-modal").classList.add("hidden");
             loadAdminOrders();
             setupRealtimeSubscription();
+            generateTableQrs();
         } else {
             errorEl.classList.remove("hidden");
         }
     }
 
+    function switchAdminTab(tab) {
+        const ordersSec = document.getElementById("admin-section-orders");
+        const qrsSec = document.getElementById("admin-section-qrs");
+        const btnOrders = document.getElementById("tab-btn-orders");
+        const btnQrs = document.getElementById("tab-btn-qrs");
 
-    // =========================================================
-    // ADMIN FILTER
-    // =========================================================
+        if (tab === 'orders') {
+            ordersSec.classList.remove("hidden");
+            qrsSec.classList.add("hidden");
+            btnOrders.className = "bg-[#C2A667] text-[#1A3021] text-xs px-3 py-1.5 rounded-lg font-bold";
+            btnQrs.className = "bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45] text-xs px-3 py-1.5 rounded-lg font-semibold";
+        } else {
+            ordersSec.classList.add("hidden");
+            qrsSec.classList.remove("hidden");
+            btnQrs.className = "bg-[#C2A667] text-[#1A3021] text-xs px-3 py-1.5 rounded-lg font-bold";
+            btnOrders.className = "bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45] text-xs px-3 py-1.5 rounded-lg font-semibold";
+        }
+    }
 
     function filterAdminStatus(status) {
         adminFilter = status;
-
         document.querySelectorAll(".admin-filter-btn").forEach(btn => {
             const active = btn.dataset.status === status;
             btn.className = active
-                ? "admin-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#2D241E] text-white shrink-0"
-                : "admin-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#5C4033] border border-[#EADBC8] shrink-0";
+                ? "admin-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#C2A667] text-[#1A3021] shrink-0"
+                : "admin-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#25402D] text-[#D1C7BD] border border-[#3A5D45] shrink-0";
         });
-
         renderAdminOrders();
     }
-
-
-    // =========================================================
-    // LOAD ADMIN ORDERS
-    // =========================================================
 
     async function loadAdminOrders() {
         const listEl = document.getElementById("admin-orders-list");
         const errorEl = document.getElementById("admin-load-error");
-
         errorEl.classList.add("hidden");
-        listEl.innerHTML = `
-            <div class="bg-white p-8 rounded-2xl text-center text-sm text-[#8C6D53] border border-[#EADBC8]">
-                Memuat pesanan...
-            </div>
-        `;
+
+        if (!supabaseClient) {
+            errorEl.textContent = "Supabase client belum terinisialisasi. Masukkan credentials yang valid.";
+            errorEl.classList.remove("hidden");
+            listEl.innerHTML = `<div class="bg-[#20392A] p-8 rounded-2xl text-center text-sm text-[#D1C7BD] border border-[#3A5D45]">Koneksi database tidak tersedia.</div>`;
+            return;
+        }
 
         try {
             const { data, error } = await supabaseClient
                 .from("orders")
                 .select("*")
                 .order("created_at", { ascending: false });
-
             if (error) throw error;
-
             adminOrders = data || [];
             renderAdminOrders();
-
         } catch (error) {
             console.error("Gagal memuat order:", error);
             errorEl.textContent = `Gagal membaca pesanan: ${error.message || "Unknown error"}`;
             errorEl.classList.remove("hidden");
-            listEl.innerHTML = `
-                <div class="bg-white p-8 rounded-2xl text-center text-sm text-[#8C6D53] border border-[#EADBC8]">
-                    Pesanan tidak bisa dimuat.
-                </div>
-            `;
         }
     }
 
-
-    // =========================================================
-    // REALTIME
-    // =========================================================
-
     function setupRealtimeSubscription() {
-        if (realtimeChannel) {
-            supabaseClient.removeChannel(realtimeChannel);
-        }
+        if (!supabaseClient) return;
+        if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
 
-        realtimeChannel = supabaseClient
-            .channel("orders-realtime")
-            .on("postgres_changes",
-                { event: "*", schema: "public", table: "orders" },
-                () => { loadAdminOrders(); }
-            )
-            .subscribe((status) => {
+        realtimeChannel = supabaseClient.channel("orders-live")
+            .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+                loadAdminOrders();
+            })
+            .subscribe(status => {
                 const dot = document.getElementById("realtime-status");
-                if (!dot) return;
-
                 if (status === "SUBSCRIBED") {
-                    dot.classList.remove("bg-gray-400", "bg-rose-500");
-                    dot.classList.add("bg-emerald-500");
-                    dot.title = "Realtime terhubung";
-                } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-                    dot.classList.remove("bg-gray-400", "bg-emerald-500");
-                    dot.classList.add("bg-rose-500");
-                    dot.title = "Realtime terputus";
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+                    dot.title = "Realtime Aktif";
+                } else {
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-rose-400";
+                    dot.title = `Realtime: ${status}`;
                 }
             });
     }
 
-
-    // =========================================================
-    // RENDER ADMIN ORDERS
-    // =========================================================
-
     function renderAdminOrders() {
         const listEl = document.getElementById("admin-orders-list");
         if (!listEl) return;
-
         listEl.innerHTML = "";
 
-        const filtered = adminFilter === "all"
-            ? adminOrders
+        const filtered = adminFilter === "all" 
+            ? adminOrders 
             : adminOrders.filter(order => order.status === adminFilter);
 
         if (filtered.length === 0) {
-            listEl.innerHTML = `
-                <div class="bg-white p-8 rounded-2xl text-center text-sm text-[#8C6D53] border border-[#EADBC8]">
-                    Tidak ada pesanan.
-                </div>
-            `;
+            listEl.innerHTML = `<div class="bg-[#20392A] p-8 rounded-2xl text-center text-sm text-[#D1C7BD] border border-[#3A5D45]">Tidak ada pesanan dengan status ini.</div>`;
             return;
         }
 
         filtered.forEach(order => {
-            const time = new Date(order.created_at);
-            const timeString = time.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+            const dateObj = new Date(order.created_at || Date.now());
+            const timeString = dateObj.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 
-            const statusMap = {
-                new: `<span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase bg-amber-100 text-amber-800">Baru</span>`,
-                accepted: `<span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase bg-blue-100 text-blue-800">Diproses</span>`,
-                completed: `<span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800">Selesai</span>`,
-                cancelled: `<span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase bg-rose-100 text-rose-800">Batal</span>`
-            };
-            const statusBadge = statusMap[order.status] || statusMap.new;
+            let statusBadge = "";
+            if (order.status === "new") statusBadge = `<span class="bg-amber-900/40 text-amber-300 border border-amber-800 px-2.5 py-0.5 rounded-full text-xs font-bold">Baru</span>`;
+            else if (order.status === "accepted") statusBadge = `<span class="bg-blue-900/40 text-blue-300 border border-blue-800 px-2.5 py-0.5 rounded-full text-xs font-bold">Diproses</span>`;
+            else if (order.status === "completed") statusBadge = `<span class="bg-emerald-900/40 text-emerald-300 border border-emerald-800 px-2.5 py-0.5 rounded-full text-xs font-bold">Selesai</span>`;
+            else if (order.status === "cancelled") statusBadge = `<span class="bg-rose-900/40 text-rose-300 border border-rose-800 px-2.5 py-0.5 rounded-full text-xs font-bold">Dibatalkan</span>`;
 
             let itemsHtml = "";
             if (order.items && typeof order.items === "object") {
                 for (const [itemId, qty] of Object.entries(order.items)) {
                     const menuItem = menuData.find(item => item.id == itemId);
                     const name = menuItem ? menuItem.name : `Menu #${itemId}`;
-                    itemsHtml += `
-                        <div class="flex justify-between text-xs py-0.5">
-                            <span class="font-medium text-[#2D241E]">${qty}x ${escapeHtml(name)}</span>
-                        </div>
-                    `;
+                    itemsHtml += `<div class="flex justify-between text-xs py-0.5"><span class="font-medium text-[#F4F1EA]">${qty}x ${name}</span></div>`;
                 }
             }
 
             const card = document.createElement("div");
-            card.className = "bg-white p-5 rounded-2xl border border-[#EADBC8] shadow-sm flex flex-col gap-3";
-
+            card.className = "bg-[#20392A] p-5 rounded-2xl border border-[#3A5D45] shadow-sm flex flex-col gap-3";
             card.innerHTML = `
                 <div class="flex justify-between items-start">
                     <div>
-                        <span class="text-xs uppercase font-semibold text-[#8C6D53]">Meja ${escapeHtml(order.table_number)}</span>
-                        <h3 class="text-lg font-bold">#${order.order_number}</h3>
+                        <span class="text-xs uppercase font-semibold text-[#C2A667]">Meja ${escapeHtml(order.table_number)}</span>
+                        <h3 class="text-lg font-bold text-[#F4F1EA]">#${order.order_number}</h3>
                     </div>
                     <div class="flex flex-col items-end gap-1">
                         ${statusBadge}
-                        <span class="text-[11px] text-[#8C6D53]">${timeString}</span>
+                        <span class="text-[11px] text-[#D1C7BD]">${timeString}</span>
                     </div>
                 </div>
-
-                <div class="bg-[#FBF9F5] p-3 rounded-xl border border-[#EADBC8]/60 flex flex-col gap-1">
-                    ${itemsHtml || `<span class="text-xs text-[#8C6D53]">Item tidak ditemukan.</span>`}
+                <div class="bg-[#1A3021] p-3 rounded-xl border border-[#3A5D45]/60 flex flex-col gap-1">
+                    ${itemsHtml || `<span class="text-xs text-[#D1C7BD]">Item tidak ditemukan.</span>`}
                 </div>
-
                 ${order.notes ? `
-                    <div class="text-xs text-[#5C4033] bg-[#EADBC8]/20 p-2.5 rounded-xl border border-[#EADBC8]/50">
+                    <div class="text-xs text-[#D1C7BD] bg-[#25402D] p-2.5 rounded-xl border border-[#3A5D45]">
                         <strong>Catatan:</strong> ${escapeHtml(order.notes)}
                     </div>
                 ` : ""}
-
-                <div class="flex justify-between items-center pt-2 border-t border-[#EADBC8]/60">
-                    <span class="text-sm font-bold text-[#8C6D53]">
-                        Total: Rp${Number(order.total || 0).toLocaleString("id-ID")}
-                    </span>
+                <div class="flex justify-between items-center pt-2 border-t border-[#3A5D45]">
+                    <span class="text-sm font-bold text-[#C2A667]">Total: Rp${Number(order.total || 0).toLocaleString("id-ID")}</span>
                     <div class="flex gap-2">
                         ${order.status === "new" ? `
-                            <button onclick="updateOrderStatus('${order.id}', 'cancelled')"
-                                    class="px-3 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-xl text-xs font-bold">Batal</button>
-                            <button onclick="updateOrderStatus('${order.id}', 'accepted')"
-                                    class="px-4 py-2 bg-[#2D241E] text-white hover:bg-[#43342C] rounded-xl text-xs font-bold">Terima</button>
+                            <button onclick="updateOrderStatus('${order.id}', 'cancelled')" class="px-3 py-2 bg-rose-950 text-rose-300 hover:bg-rose-900 border border-rose-800 rounded-xl text-xs font-bold">Batal</button>
+                            <button onclick="updateOrderStatus('${order.id}', 'accepted')" class="px-4 py-2 bg-[#C2A667] text-[#1A3021] hover:bg-[#d4b778] rounded-xl text-xs font-bold">Terima</button>
                         ` : ""}
                         ${order.status === "accepted" ? `
-                            <button onclick="updateOrderStatus('${order.id}', 'completed')"
-                                    class="px-4 py-2 bg-emerald-700 text-white hover:bg-emerald-800 rounded-xl text-xs font-bold">Selesai</button>
+                            <button onclick="updateOrderStatus('${order.id}', 'completed')" class="px-4 py-2 bg-emerald-700 text-white hover:bg-emerald-800 rounded-xl text-xs font-bold">Selesai</button>
                         ` : ""}
                     </div>
                 </div>
             `;
-
             listEl.appendChild(card);
         });
     }
 
-
-    // =========================================================
-    // UPDATE ORDER STATUS
-    // =========================================================
-
     async function updateOrderStatus(orderId, newStatus) {
+        if (!supabaseClient) return;
         try {
-            const { error } = await supabaseClient
-                .from("orders")
-                .update({ status: newStatus })
-                .eq("id", orderId);
-
+            const { error } = await supabaseClient.from("orders").update({ status: newStatus }).eq("id", orderId);
             if (error) throw error;
-
             await loadAdminOrders();
-
         } catch (error) {
             console.error("Gagal mengubah status:", error);
             alert(`Gagal memperbarui status: ${error.message || "Unknown error"}`);
         }
     }
 
+    function generateTableQrs() {
+        const grid = document.getElementById("qr-grid");
+        if (!grid || grid.children.length > 0) return;
+        const baseUrl = window.location.origin + window.location.pathname;
 
-    // =========================================================
-    // ESCAPE HTML
-    // =========================================================
+        for (let i = 1; i <= 10; i++) {
+            const tableNum = String(i).padStart(2, '0');
+            const targetUrl = `${baseUrl}?table=${tableNum}`;
+
+            const box = document.createElement("div");
+            box.className = "bg-[#1A3021] p-4 rounded-xl border border-[#3A5D45] flex flex-col items-center gap-2 text-center";
+            box.innerHTML = `
+                <h4 class="font-bold text-sm text-[#C2A667]">Meja ${tableNum}</h4>
+                <div id="qrcode-${tableNum}" class="bg-white p-2 rounded-lg"></div>
+                <a href="${targetUrl}" target="_blank" class="text-[11px] text-[#D1C7BD] underline truncate max-w-full">${targetUrl}</a>
+            `;
+            grid.appendChild(box);
+
+            new QRCode(document.getElementById(`qrcode-${tableNum}`), {
+                text: targetUrl,
+                width: 120,
+                height: 120,
+                colorDark: "#1A3021",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+    }
 
     function escapeHtml(value) {
         return String(value)
@@ -1037,8 +756,9 @@
             .replaceAll('"', "&quot;")
             .replaceAll("'", "&#039;");
     }
-
 </script>
 
 </body>
 </html>
+
+```
